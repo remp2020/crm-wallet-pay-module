@@ -1,0 +1,17 @@
+{
+  "name": "remp/crm-wallet-pay-module",
+  "description": "CRM Wallet Pay Module (Apple Pay and Google Pay support)",
+  "type": "library",
+  "homepage": "https://remp2030.com",
+  "license": "MIT",
+  "require": {
+    "php": "^7.4"
+  },
+  "minimum-stability": "dev",
+  "autoload": {
+    "psr-4": {
+      "Crm\\WalletPayModule\\": "src/"
+    },
+    "classmap": ["src/"]
+  }
+}

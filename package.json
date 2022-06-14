@@ -1,0 +1,19 @@
+{
+  "name": "wallet-pay-module",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "license": "MIT",
+  "author": "N Press, s.r.o.",
+  "scripts": {
+    "dev": "mix",
+    "prod": "mix --production",
+    "watch": "mix watch"
+  },
+  "devDependencies": {
+    "laravel-mix": "^6.0.43"
+  },
+  "dependencies": {
+    "@google-pay/button-element": "^3.0.0"
+  }
+}
