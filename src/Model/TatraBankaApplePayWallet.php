@@ -14,6 +14,7 @@ use Money\Currency;
 use Nette\Application\UI\InvalidLinkException;
 use Nette\Database\Table\ActiveRow;
 use Tracy\Debugger;
+use Tracy\ILogger;
 
 class TatraBankaApplePayWallet implements ApplePayWalletInterface
 {
@@ -58,8 +59,9 @@ class TatraBankaApplePayWallet implements ApplePayWalletInterface
 
         $resultData = $result->resultData();
         if (!$resultData) {
-            Debugger::log("TatraBankaApplePayWallet - missing result data after transaction");
-            return new ApplePayResult(ApplePayResult::ERROR);
+            Debugger::log("TatraBankaApplePayWallet - transaction error: " . $result->message(), ILogger::ERROR);
+            $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_FAIL);
+            return new ApplePayResult(ApplePayResult::ERROR, ['error' => $result->message()]);
         }
 
         $meta = array_filter([
@@ -70,11 +72,11 @@ class TatraBankaApplePayWallet implements ApplePayWalletInterface
         ], static fn($value) => $value !== null);
 
         if (!$result->isSuccess()) {
+            $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_FAIL);
             return new ApplePayResult(ApplePayResult::ERROR, $meta);
         }
 
         $this->paymentMetaRepository->add($payment, Constants::WALLET_PAY_PROCESSING_ID, $result->resultData()->getProcessingId());
-
         $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_PAID);
 
         return new ApplePayResult(ApplePayResult::OK, $meta);

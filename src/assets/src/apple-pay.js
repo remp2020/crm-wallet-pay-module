@@ -86,9 +86,13 @@ export function ApplePayButton(element, config) {
                         cache: 'no-cache',
                         body: formData,
                     });
-                    session.completePayment(ApplePaySession.STATUS_SUCCESS);
                     const responseData = await response.json();
-                    window.top.location.href = responseData.apple_pay.redirect_url;
+                    if (responseData.status === 'ok') {
+                        session.completePayment(ApplePaySession.STATUS_SUCCESS);
+                        window.top.location.href = responseData.apple_pay.redirect_url;
+                    } else {
+                        session.completePayment(ApplePaySession.STATUS_FAILURE);
+                    }
                 } catch (e) {
                     session.completePayment(ApplePaySession.STATUS_FAILURE);
                 }

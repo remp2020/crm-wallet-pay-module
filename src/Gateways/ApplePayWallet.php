@@ -68,7 +68,7 @@ class ApplePayWallet extends GatewayAbstract
 
     public function isSuccessful(): bool
     {
-        return isset($this->applePayResult) && ($this->applePayResult->isOk());
+        return isset($this->applePayResult) && $this->applePayResult->isOk();
     }
 
     public function getResponseData()
