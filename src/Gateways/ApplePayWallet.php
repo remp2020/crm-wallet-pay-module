@@ -45,7 +45,7 @@ class ApplePayWallet extends GatewayAbstract
             return;
         }
         $this->variableSymbol = $payment->variable_symbol;
-        $this->applePayResult = $this->applePayWallet->process($payment, $applePayToken);
+        $this->applePayResult = $this->applePayWallet->process($payment, $applePayToken->value);
     }
 
     public function complete($payment): ?bool

@@ -46,7 +46,7 @@ class GooglePayWallet extends GatewayAbstract
             return;
         }
         $this->variableSymbol = $payment->variable_symbol;
-        $this->googlePayResult = $this->googlePayWallet->process($payment, $googlePayToken);
+        $this->googlePayResult = $this->googlePayWallet->process($payment, $googlePayToken->value);
     }
 
     /**
