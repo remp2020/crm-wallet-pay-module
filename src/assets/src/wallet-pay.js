@@ -50,7 +50,7 @@ function RempWalletPay() {
 
     this.checkApplePayAvailability = async function(merchantId, callback) {
         if (window.ApplePaySession) {
-            const available = await ApplePaySession.canMakePaymentsWithActiveCard(merchantId);
+            const available = ApplePaySession.canMakePayments(merchantId);
             if (available) {
                 callback();
             }

@@ -26,7 +26,7 @@ export function ApplePayButton(element, config) {
             amount: config.totalPrice,
         },
         supportedNetworks: ['amex', 'masterCard', 'visa' ],
-        merchantCapabilities: ['supports3DS', 'supportsEMV', 'supportsCredit', 'supportsDebit']
+        merchantCapabilities: ['supports3DS', 'supportsCredit', 'supportsDebit']
     };
 
     this.update = (newConfig) => {
