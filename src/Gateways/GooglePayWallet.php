@@ -23,7 +23,7 @@ class GooglePayWallet extends GatewayAbstract
     private GooglePayWalletInterface $googlePayWallet;
     private WalletPayTokensRepository $walletPayTokensRepository;
     private ?GooglePayResult $googlePayResult;
-    private ?string $variableSymbol;
+    private $payment;
 
     public function __construct(
         LinkGenerator $linkGenerator,
@@ -45,8 +45,8 @@ class GooglePayWallet extends GatewayAbstract
             Debugger::log("Missing google pay token for payment #{$payment->id}", Debugger::ERROR);
             return;
         }
-        $this->variableSymbol = $payment->variable_symbol;
         $this->googlePayResult = $this->googlePayWallet->process($payment, $googlePayToken->value);
+        $this->payment = $payment;
     }
 
     /**
@@ -62,32 +62,19 @@ class GooglePayWallet extends GatewayAbstract
         if ($this->googlePayResult->is3ds()) {
             $responseData['tds_html'] = $this->googlePayResult->tdsHtml();
         } else {
-            $responseData['redirect_url'] = $this->linkGenerator->link('SalesFunnel:SalesFunnel:success', ['variableSymbol' => $this->variableSymbol]);
+            $responseData['redirect_url'] = $this->generateReturnUrl($this->payment, ['VS' => $this->payment->variable_symbol]);
         }
         return new ProcessResponse('google_pay', $responseData);
     }
 
     public function complete($payment): ?bool
     {
-        return null;
+        return $this->googlePayWallet->checkPayment($payment);
     }
 
     public function isSuccessful(): bool
     {
-        // TODO: nespracovat 3ds nejak specialne?
         return isset($this->googlePayResult) && ($this->googlePayResult->isOk() || $this->googlePayResult->is3ds());
-    }
-
-    public function isCancelled()
-    {
-        // TODO: co tu?
-        return parent::isCancelled();
-    }
-
-    public function isNotSettled()
-    {
-        // TODO: co tu?
-        return parent::isNotSettled();
     }
 
     public function getResponseData()

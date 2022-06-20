@@ -3,29 +3,19 @@
 namespace Crm\WalletPayModule\Presenters;
 
 use Crm\ApplicationModule\Presenters\FrontendPresenter;
-use Crm\PaymentsModule\Models\Wallet\CardPayDirectService;
-use Crm\PaymentsModule\Repository\PaymentMetaRepository;
 use Crm\PaymentsModule\Repository\PaymentsRepository;
-use Crm\WalletPayModule\Gateways\GooglePayWallet;
-use Crm\WalletPayModule\Model\Constants;
+use Nette\Application\LinkGenerator;
 
 class TatrabankaGooglePayTdsPresenter extends FrontendPresenter
 {
     private PaymentsRepository $paymentsRepository;
+    private LinkGenerator $linkGenerator;
 
-    private PaymentMetaRepository $paymentMetaRepository;
-
-    private CardPayDirectService $cardPayDirectService;
-
-    public function __construct(
-        PaymentsRepository $paymentsRepository,
-        PaymentMetaRepository $paymentMetaRepository,
-        CardPayDirectService $cardPayDirectService
-    ) {
+    public function __construct(PaymentsRepository $paymentsRepository, LinkGenerator $linkGenerator)
+    {
         parent::__construct();
         $this->paymentsRepository = $paymentsRepository;
-        $this->paymentMetaRepository = $paymentMetaRepository;
-        $this->cardPayDirectService = $cardPayDirectService;
+        $this->linkGenerator = $linkGenerator;
     }
 
     public function renderRedirect($vs)
@@ -35,33 +25,13 @@ class TatrabankaGooglePayTdsPresenter extends FrontendPresenter
             $this->setErrorRedirect();
             return;
         }
-        if ($payment->status !== PaymentsRepository::STATUS_FORM) {
-            $this->setErrorRedirect();
-            return;
-        }
-        if ($payment->payment_gateway->code !== GooglePayWallet::GATEWAY_CODE) {
-            $this->setErrorRedirect();
-            return;
-        }
 
-        $meta = $this->paymentMetaRepository->findByPaymentAndKey($payment, Constants::WALLET_PAY_PROCESSING_ID);
-        if (!$meta) {
-            $this->setErrorRedirect();
-            return;
-        }
-        $processingId = $meta->value;
+        $url = $this->linkGenerator->link('Payments:Return:gateway', [
+            'gatewayCode' => $payment->payment_gateway->code,
+            'VS' => $payment->variable_symbol,
+        ]);
 
-        $mid = $this->applicationConfig->get('cardpay_mid');
-        $result = $this->cardPayDirectService->checkTransaction($processingId, $mid);
-
-        if (!$result->isSuccess()) {
-            $this->setErrorRedirect();
-            return;
-        }
-
-        $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_PAID);
-
-        $this->template->url = $this->link(':SalesFunnel:SalesFunnel:success', ['variableSymbol' => $payment->variable_symbol]);
+        $this->template->url = $url;
     }
 
     private function setErrorRedirect()

@@ -15,31 +15,40 @@ use Nette\Application\LinkGenerator;
 use Nette\Application\UI\InvalidLinkException;
 use Nette\Database\Table\ActiveRow;
 use Tracy\Debugger;
+use Tracy\ILogger;
 
 class TatraBankaGooglePayWallet implements GooglePayWalletInterface
 {
     private ApplicationConfig $applicationConfig;
-
     private LinkGenerator $linkGenerator;
-
-    private PaymentsRepository $paymentsRepository;
-
     private PaymentMetaRepository $paymentMetaRepository;
-
     private CardPayDirectService $cardPayDirectService;
+    private PaymentsRepository $paymentsRepository;
 
     public function __construct(
         ApplicationConfig $applicationConfig,
         LinkGenerator $linkGenerator,
-        PaymentsRepository $paymentsRepository,
         PaymentMetaRepository $paymentMetaRepository,
-        CardPayDirectService $cardPayDirectService
+        CardPayDirectService $cardPayDirectService,
+        PaymentsRepository $paymentsRepository
     ) {
         $this->applicationConfig = $applicationConfig;
         $this->linkGenerator = $linkGenerator;
-        $this->paymentsRepository = $paymentsRepository;
         $this->paymentMetaRepository = $paymentMetaRepository;
         $this->cardPayDirectService = $cardPayDirectService;
+        $this->paymentsRepository = $paymentsRepository;
+    }
+
+    public function checkPayment(ActiveRow $payment): bool
+    {
+        $processingId = $this->paymentMetaRepository->findByPaymentAndKey($payment, Constants::WALLET_PAY_PROCESSING_ID);
+        if (!$processingId) {
+            return false;
+        }
+
+        $mid = $this->applicationConfig->get('cardpay_mid');
+        $result = $this->cardPayDirectService->checkTransaction($processingId->value, $mid);
+        return $result->isSuccess();
     }
 
     /**
@@ -64,8 +73,10 @@ class TatraBankaGooglePayWallet implements GooglePayWalletInterface
 
         $resultData = $result->resultData();
         if (!$resultData) {
-            Debugger::log("TatraBankaGooglePayWallet - missing result data after transaction");
-            return new GooglePayResult(GooglePayResult::ERROR);
+            Debugger::log("TatraBankaGooglePayWallet - transaction error: " . $result->message(), ILogger::ERROR);
+            // Update payment status here instead of redirecting to ReturnPresenter (user may want to stay on the sales funnel in case of ERROR)
+            $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_FAIL);
+            return new GooglePayResult(GooglePayResult::ERROR, ['error' => $result->message()]);
         }
 
         $meta = array_filter([
@@ -76,6 +87,8 @@ class TatraBankaGooglePayWallet implements GooglePayWalletInterface
         ], static fn($value) => $value !== null);
 
         if (!$result->isSuccess()) {
+            // Update payment status here instead of redirecting to ReturnPresenter (user may want to stay on the sales funnel in case of ERROR)
+            $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_FAIL);
             return new GooglePayResult(GooglePayResult::ERROR, $meta);
         }
 
@@ -84,8 +97,6 @@ class TatraBankaGooglePayWallet implements GooglePayWalletInterface
         if ($result->resultData()->getTdsRedirectionFormHtml()) {
             return new GooglePayResult(GooglePayResult::TDS, $meta, $result->resultData()->getTdsRedirectionFormHtml());
         }
-
-        $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_PAID);
 
         return new GooglePayResult(GooglePayResult::OK, $meta);
     }

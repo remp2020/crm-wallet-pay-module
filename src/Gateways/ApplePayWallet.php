@@ -6,8 +6,10 @@ use Crm\ApplicationModule\Config\ApplicationConfig;
 use Crm\PaymentsModule\CannotProcessPayment;
 use Crm\PaymentsModule\Gateways\GatewayAbstract;
 use Crm\PaymentsModule\Gateways\ProcessResponse;
+use Crm\PaymentsModule\Repository\PaymentMetaRepository;
 use Crm\WalletPayModule\Model\ApplePayResult;
 use Crm\WalletPayModule\Model\ApplePayWalletInterface;
+use Crm\WalletPayModule\Model\Constants;
 use Crm\WalletPayModule\Repositories\WalletPayTokensRepository;
 use Nette\Application\LinkGenerator;
 use Nette\Http\Response;
@@ -19,10 +21,11 @@ class ApplePayWallet extends GatewayAbstract
     public const GATEWAY_CODE = 'applepay_wallet';
     public const APPLE_PAY_TOKEN = 'apple_pay_token';
 
+    private PaymentMetaRepository $paymentMetaRepository;
     private WalletPayTokensRepository $walletPayTokensRepository;
     private ApplePayWalletInterface $applePayWallet;
     private ?ApplePayResult $applePayResult;
-    private ?string $variableSymbol;
+    private $payment;
 
     public function __construct(
         LinkGenerator $linkGenerator,
@@ -30,11 +33,13 @@ class ApplePayWallet extends GatewayAbstract
         Response $httpResponse,
         Translator $translator,
         ApplePayWalletInterface $applePayWallet,
-        WalletPayTokensRepository $walletPayTokensRepository
+        WalletPayTokensRepository $walletPayTokensRepository,
+        PaymentMetaRepository $paymentMetaRepository
     ) {
         parent::__construct($linkGenerator, $applicationConfig, $httpResponse, $translator);
         $this->applePayWallet = $applePayWallet;
         $this->walletPayTokensRepository = $walletPayTokensRepository;
+        $this->paymentMetaRepository = $paymentMetaRepository;
     }
 
     public function begin($payment)
@@ -44,13 +49,8 @@ class ApplePayWallet extends GatewayAbstract
             Debugger::log("Missing apple pay token for payment #{$payment->id}", Debugger::ERROR);
             return;
         }
-        $this->variableSymbol = $payment->variable_symbol;
+        $this->payment = $payment;
         $this->applePayResult = $this->applePayWallet->process($payment, $applePayToken->value);
-    }
-
-    public function complete($payment): ?bool
-    {
-        return null;
     }
 
     public function process($allowRedirect = true)
@@ -58,12 +58,21 @@ class ApplePayWallet extends GatewayAbstract
         if (!$this->applePayResult || $this->applePayResult->isError()) {
             throw new CannotProcessPayment("ApplePayWallet - payment was not successful");
         }
-
-        $responseData = [];
-
-        $responseData['redirect_url'] = $this->linkGenerator->link('SalesFunnel:SalesFunnel:success', ['variableSymbol' => $this->variableSymbol]);
+        $responseData = [
+            'redirect_url' => $this->generateReturnUrl($this->payment, ['VS' => $this->payment->variable_symbol])
+        ];
 
         return new ProcessResponse('apple_pay', $responseData);
+    }
+
+    public function complete($payment): ?bool
+    {
+        // PROCESSING_ID is assigned only in case of successful payment
+        $walletPayProcessingId = $this->paymentMetaRepository->findByPaymentAndKey($payment, Constants::WALLET_PAY_PROCESSING_ID);
+        if ($walletPayProcessingId) {
+            return true;
+        }
+        return false;
     }
 
     public function isSuccessful(): bool

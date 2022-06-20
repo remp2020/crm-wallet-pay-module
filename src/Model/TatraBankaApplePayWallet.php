@@ -60,6 +60,7 @@ class TatraBankaApplePayWallet implements ApplePayWalletInterface
         $resultData = $result->resultData();
         if (!$resultData) {
             Debugger::log("TatraBankaApplePayWallet - transaction error: " . $result->message(), ILogger::ERROR);
+            // Update payment status here instead of redirecting to ReturnPresenter (user may want to stay on the sales funnel in case of ERROR)
             $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_FAIL);
             return new ApplePayResult(ApplePayResult::ERROR, ['error' => $result->message()]);
         }
@@ -72,13 +73,13 @@ class TatraBankaApplePayWallet implements ApplePayWalletInterface
         ], static fn($value) => $value !== null);
 
         if (!$result->isSuccess()) {
+            // Update payment status here instead of redirecting to ReturnPresenter (user may want to stay on the sales funnel in case of ERROR)
             $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_FAIL);
             return new ApplePayResult(ApplePayResult::ERROR, $meta);
         }
 
+        // assigning PROCESSING_ID means payment was successful
         $this->paymentMetaRepository->add($payment, Constants::WALLET_PAY_PROCESSING_ID, $result->resultData()->getProcessingId());
-        $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_PAID);
-
         return new ApplePayResult(ApplePayResult::OK, $meta);
     }
 }
