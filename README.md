@@ -1,7 +1,8 @@
 # CRM Wallet Pay module
 
-This module provides integration of the Apple Pay and Google Pay payment gateways into sales funnels.  
+This module provides integration of the Apple Pay and Google Pay payment gateways into sales funnels.
 
+Currently, only non-recurrent payments are supported, since Tatra banka (merchant processing actual payments) do not support recurrent payments. 
 ## Installation
 
 To install the module, run:
@@ -31,17 +32,26 @@ make js
 # run in CRM root folder
 php bin/command.php application:install_assets 
 ```
-3. In a sales funnel, include the JS library:
-```html
-<!-- include in <head> -->
-<script src="/layouts/wallet-pay-module/js/wallet-pay.js"></script> 
-```
 
 ## Apple Pay button
 
-### Set-up 
+### Configuration
+
+In CRM settings (`crm.press/admin/config-admin/`) `Payments` section, set up Apple Pay configuration values. These include paths to Apple Pay merchant ID certificate and key (including password, if encrypted). 
+For more information, consult the official documentation on how to [Set Up Apple Pay](https://developer.apple.com/documentation/passkit/apple_pay/setting_up_apple_pay). 
+
+#### Requirements
+
+Apple Pay requires HTTPS webpage with valid TLS certificate.
+
+### Usage in sales funnel
 
 First, add "ApplePay Wallet" payment gateway to the list of allowed gateways in the sales funnel settings in CRM admin.
+
+Next, include the WalletPay JS library in the sales funnel `<head>` tag (if not already included):
+```html
+<script src="/layouts/wallet-pay-module/js/wallet-pay.js"></script> 
+```
 
 To display the button itself, insert the following code snippet somewhere in your HTML document. Note the `hidden` class - button should be hidden at first, before we check Apple Pay availability. 
 
@@ -85,35 +95,35 @@ const config = {
 RempWalletPay.initApplePayButton(config);
 ```
 
-Alternatively, you can provide `onSuccess` callback, which gives you control of processing of the Apple Pay token:
+Alternatively, can provide `onSuccess` callback, which gives control of processing of the Apple Pay token issued during the payment:
 ```js
 const config = {
-  totalPrice: '0.10',
-  merchantName: 'Example Merchant s.r.o',
-  productName: 'Example Product Name',
+    totalPrice: '0.10',
+    merchantName: 'Example Merchant s.r.o',
+    productName: 'Example Product Name',
 
-  // Callback, called after user confirms the payment in the Apple modal (e.g. by fingerprint).
-  // It receives two arguments:
-  // - token - Apple Pay token
-  // - completePaymentCallback - callback, should be called after backend (un/successfully) ackowledges the payment 
-  onSuccess: (token, completePaymentCallback) =>  {
-    var fd = new FormData(document.getElementById('form'));
-    fd.append('apple_pay_token', token);
-      
-    fetch('/sales-funnel/sales-funnel-frontend/submit', {
-      method: 'POST',
-      body: fd,
-    })
+    // Callback, called after user confirms the payment in the Apple modal (e.g. by fingerprint).
+    // It receives two arguments:
+    // - token - Apple Pay token
+    // - completePaymentCallback - callback, should be called after backend (un/successfully) ackowledges the payment 
+    onSuccess: (token, completePaymentCallback) =>  {
+        var fd = new FormData(document.getElementById('form'));
+        fd.append('apple_pay_token', token);
+          
+        fetch('/sales-funnel/sales-funnel-frontend/submit', {
+            method: 'POST',
+            body: fd,
+        })
             .then(response => response.json())
             .then(data => {
-              completePaymentCallback(true);
-              window.top.location.href = data.apple_pay.redirect_url; // redirect to success page
+                completePaymentCallback(true);
+                window.top.location.href = data.apple_pay.redirect_url; // redirect to success page
             })
             .catch(e => completePaymentCallback(false));
-  },
-
-  // optional, function returning true/false depending on whether Apple Pay execution should continue after clicking on the Pay button.
-  isValid: () => some_check_to_see_if_payment_form_is_valid(),
+    },
+    
+    // optional, function returning true/false depending on whether Apple Pay execution should continue after clicking on the Pay button.
+    isValid: () => some_check_to_see_if_payment_form_is_valid(),
 };
 RempWalletPay.initApplePayButton(config);
 ```
@@ -131,7 +141,124 @@ RempWalletPay.updateApplePayButton({
 
 ## Google Pay
 
-TODO
+### Configuration
+
+To set up Google Pay and obtain required credentials, please follow the official documentation on [Google Pay for web](https://developers.google.com/pay/api/web/guides/setup).
+
+#### Requirements
+
+Google Pay requires HTTPS webpage with valid TLS certificate. 
+
+### Usage in sales funnel
+
+First, add "GooglePay Wallet" payment gateway to the list of allowed gateways in the sales funnel settings in CRM admin.
+
+Next, include the WalletPay JS library in the sales funnel `<head>` tag (if not already included):
+```html
+<script src="/layouts/wallet-pay-module/js/wallet-pay.js"></script> 
+```
+
+To display the button itself, insert the following code snippet somewhere in your HTML document.
+
+```html
+<google-pay-button environment="PRODUCTION" 
+                   button-locale="sk"
+                   button-color="white" 
+                   button-size-mode="fill" 
+                   style="width:100%">
+</google-pay-button>
+```
+All properties of the button are described in the [GitHub documentation](https://github.com/google-pay/google-pay-button/tree/main/src/button-element#properties).
+
+To initialize the button, run the `initGooglePayButton`. The most basic configuration:
+
+```js
+const config = {
+    // price shown to user
+    totalPrice: '0.10',
+    // merchantId is one of the credentials obtain during configuration
+    merchantId: '1234567890',
+    // some merchant name to show to user
+    merchantName: 'Example merchant',
+
+    // Function to retrieve sales funnel payment form data (will be sent together with Google Pay token to backend).
+    // Library takes care of response processing and redirect.
+    salesFunnelFormData: () => {
+        return new FormData(document.getElementById('form'));
+    },
+
+    // Optional, function returning true/false depending on whether Google Pay execution should continue after clicking on the button.
+    isValid: () => true, 
+    
+    // Optional, callback function to show progress during the payment   
+    inProgress: (promise) => {
+        console.log("Google payment starts"); // here, display some animation 
+        promise.then(() => {
+            console.log("Google payment starts"); // here, stop the animation
+        });
+    }
+};
+RempWalletPay.initGooglePayButton(config);
+```
+
+Alternatively, provide `onSuccess` callback, which gives control of processing of the Google Pay token issued during the payment and location to put 3DS dialog HTML code:
+
+```js
+const config = {
+    // price shown to user
+    totalPrice: '0.10',
+    // merchantId is one of the credentials obtain during configuration
+    merchantId: '1234567890',
+    // some merchant name to show to user
+    merchantName: 'Example merchant',
+
+    // Callback, called after user confirms the payment in the Google Pay dialog.
+    // Argument:
+    // - token - Google Pay token
+    onSuccess: (token) =>  {
+        var fd = new FormData(document.getElementById('form'));
+        fd.append('google_pay_token', token);
+
+        fetch('/sales-funnel/sales-funnel-frontend/submit', {
+            method: 'POST',
+            body: fd,
+        })
+            .then(response => response.json())
+            .then(data => {
+                // if 'tds_html' attribute is present, 3DS is required
+                if (data.google_pay.tds_html) {
+                    // helper function to display 3DS html in an iframe modal
+                    RempWalletPay.show3ds(data.google_pay.tds_html);
+                } else {
+                    // redirect to success page (no 3DS requirement to finish the payment)
+                    window.top.location.href = data.google_pay.redirect_url;
+                }
+            });
+    },
+    
+    // Optional, function returning true/false depending on whether Google Pay execution should continue after clicking on the button.
+    isValid: () => true,
+
+    // Optional, callback function to show progress during the payment   
+    inProgress: (promise) => {
+        console.log("Google payment starts"); // here, display some animation 
+        promise.then(() => {
+            console.log("Google payment starts"); // here, stop the animation
+        });
+    }
+};
+RempWalletPay.initGooglePayButton(config);
+```
+
+#### Pay button update
+
+To update price of the button, call:
+
+```js
+RempWalletPay.updateGooglePayButton({
+    totalPrice: '0.20', // new price
+});
+```
 
 ## API documentation
 
