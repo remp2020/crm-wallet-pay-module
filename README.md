@@ -1,12 +1,12 @@
 # CRM Wallet Pay module
 
-This module provides integration of the Apple Pay and Google Pay payment gateways into sales funnels.
+This module provides integration of the Apple Pay and Google Pay payment gateways into the sales funnels.
 
-Currently, only non-recurrent payments are supported, since Tatra banka (merchant processing actual payments) do not support recurrent payments. 
+Currently the module supports _gateway_ implementation using Tatrabanka provider. This provider currently does not support recurrent payments.
+
 ## Installation
 
 To install the module, run:
-
 
 ```bash
 composer require remp/crm-wallet-pay-module
@@ -20,31 +20,27 @@ extensions:
 	- Crm\WalletPayModule\DI\WalletPayModuleExtension
 ```
 
-To have the module functionality available in sales funnels, follow the steps:
+To have the module functionality available in sales funnels, copy assets by running this command in the application root folder (or run `composer install`, which install assets as well):
 
-1. Go to the module root folder and build JS library:
-```bash
-# run in WalletPayModule 
-make js
-```
-2. Copy built assets by running this command in the application root folder (or run `composer install`, which install assets as well):
 ```bash
 # run in CRM root folder
 php bin/command.php application:install_assets 
 ```
 
-## Apple Pay button
+## Integration
 
-### Configuration
+### Apple Pay button
 
-In CRM settings (`crm.press/admin/config-admin/`) `Payments` section, set up Apple Pay configuration values. These include paths to Apple Pay merchant ID certificate and key (including password, if encrypted). 
+#### Configuration
+
+In CRM settings (`crm.press/admin/config-admin/`) _Payments_ section, configure Apple Pay options. These include paths to Apple Pay merchant ID certificate and key (including password, if encrypted).
 For more information, consult the official documentation on how to [Set Up Apple Pay](https://developer.apple.com/documentation/passkit/apple_pay/setting_up_apple_pay). 
 
 #### Requirements
 
 Apple Pay requires HTTPS webpage with valid TLS certificate.
 
-### Usage in sales funnel
+#### Usage in sales funnel
 
 First, add "ApplePay Wallet" payment gateway to the list of allowed gateways in the sales funnel settings in CRM admin.
 
@@ -76,7 +72,8 @@ RempWalletPay.checkApplePayAvailability(MERCHANT_ID, function () {
     document.getElementsByTagName('apple-pay-button')[0].classList.remove('hidden');
 });
 ```
-To initialize the button, run the `initApplePayButton`. The most basic configuration: 
+To initialize the button, run the `initApplePayButton`. The most basic configuration:
+
 ```js
 const config = {
   totalPrice: '0.10',
@@ -95,7 +92,8 @@ const config = {
 RempWalletPay.initApplePayButton(config);
 ```
 
-Alternatively, can provide `onSuccess` callback, which gives control of processing of the Apple Pay token issued during the payment:
+Alternatively, you can provide `onSuccess` callback, which gives you control of processing of the Apple Pay token issued during the payment:
+
 ```js
 const config = {
     totalPrice: '0.10',
@@ -139,9 +137,9 @@ RempWalletPay.updateApplePayButton({
 });
 ```
 
-## Google Pay
+### Google Pay
 
-### Configuration
+#### Configuration
 
 To set up Google Pay and obtain required credentials, please follow the official documentation on [Google Pay for web](https://developers.google.com/pay/api/web/guides/setup).
 
@@ -149,7 +147,7 @@ To set up Google Pay and obtain required credentials, please follow the official
 
 Google Pay requires HTTPS webpage with valid TLS certificate. 
 
-### Usage in sales funnel
+#### Usage in sales funnel
 
 First, add "GooglePay Wallet" payment gateway to the list of allowed gateways in the sales funnel settings in CRM admin.
 
@@ -258,6 +256,23 @@ To update price of the button, call:
 RempWalletPay.updateGooglePayButton({
     totalPrice: '0.20', // new price
 });
+```
+
+## Extension
+
+If you want to use your own gateway provider (instead of Tatrabanka), you can extend this module with your own implementation. Please note that this module does not provide support for _direct_ wallet pay payments.
+
+First, you need to implement the integration by providing the implementation of the Google/Apple pay interfaces:
+
+- `Crm\WalletPayModule\Model\GooglePayWalletInterface`
+- `Crm\WalletPayModule\Model\ApplePayWalletInterface`
+
+When they're ready, register them in your `config.neon` file and override the default implementation provided by this module:
+
+```neon
+services:
+	applePayWallet: Crm\FooModule\Model\YourProviderApplePayWallet
+	googlePayWallet: Crm\FooModule\Model\YourProviderGooglePayWallet
 ```
 
 ## API documentation

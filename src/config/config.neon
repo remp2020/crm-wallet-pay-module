@@ -11,9 +11,9 @@ services:
 	- Crm\WalletPayModule\Api\ApplePayMerchantValidationHandler
 	- Crm\WalletPayModule\Gateways\ApplePayWallet
 	- Crm\WalletPayModule\Gateways\GooglePayWallet
+	applePayWallet: Crm\WalletPayModule\Model\TatraBankaApplePayWallet
+	googlePayWallet: Crm\WalletPayModule\Model\TatraBankaGooglePayWallet
 	- Crm\WalletPayModule\Seeders\ConfigsSeeder
 	- Crm\WalletPayModule\Seeders\PaymentGatewaysSeeder
-	- Crm\WalletPayModule\Model\TatraBankaGooglePayWallet
 	- Crm\WalletPayModule\DataProviders\WalletPayTokensDataProvider
 	- Crm\WalletPayModule\Repositories\WalletPayTokensRepository
-	- Crm\WalletPayModule\Model\TatraBankaApplePayWallet
