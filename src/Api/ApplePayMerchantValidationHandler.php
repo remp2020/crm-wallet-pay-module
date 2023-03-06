@@ -54,7 +54,7 @@ class ApplePayMerchantValidationHandler extends ApiHandler
     {
         $url = $params['url'];
         $parsedUrl = parse_url($url);
-        if ($parsedUrl['scheme'] !== 'https' || !in_array($parsedUrl['host'], self::ALLOWED_APPLE_PAY_DOMAINS, false)) {
+        if ($parsedUrl['scheme'] !== 'https' || !in_array($parsedUrl['host'], self::ALLOWED_APPLE_PAY_DOMAINS, true)) {
             return new JsonApiResponse(Response::S400_BAD_REQUEST, ["error" => "Incorrect 'url' parameter"]);
         }
 
