@@ -10,6 +10,10 @@
     "prod": "mix --production",
     "watch": "mix watch"
   },
+  "engines": {
+    "node": ">=18",
+    "npm": ">=8"
+  },
   "devDependencies": {
     "laravel-mix": "^6.0.43"
   },
