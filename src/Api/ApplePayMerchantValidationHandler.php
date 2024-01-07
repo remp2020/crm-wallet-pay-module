@@ -2,7 +2,7 @@
 
 namespace Crm\WalletPayModule\Api;
 
-use Crm\ApiModule\Api\ApiHandler;
+use Crm\ApiModule\Models\Api\ApiHandler;
 use Crm\ApplicationModule\Config\ApplicationConfig;
 use GuzzleHttp\Client;
 use Nette\Http\Request;
