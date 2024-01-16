@@ -2,6 +2,7 @@
 
 namespace Crm\WalletPayModule\DI;
 
+use Nette\Application\IPresenterFactory;
 use Nette\DI\CompilerExtension;
 
 class WalletPayModuleExtension extends CompilerExtension
@@ -18,7 +19,7 @@ class WalletPayModuleExtension extends CompilerExtension
     {
         $builder = $this->getContainerBuilder();
         // load presenters from extension to Nette
-        $builder->getDefinition($builder->getByType(\Nette\Application\IPresenterFactory::class))
+        $builder->getDefinition($builder->getByType(IPresenterFactory::class))
             ->addSetup('setMapping', [['WalletPay' => 'Crm\WalletPayModule\Presenters\*Presenter']]);
     }
 }
