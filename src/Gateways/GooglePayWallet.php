@@ -3,9 +3,9 @@
 namespace Crm\WalletPayModule\Gateways;
 
 use Crm\ApplicationModule\Config\ApplicationConfig;
-use Crm\PaymentsModule\CannotProcessPayment;
-use Crm\PaymentsModule\Gateways\GatewayAbstract;
-use Crm\PaymentsModule\Gateways\ProcessResponse;
+use Crm\PaymentsModule\Models\CannotProcessPayment;
+use Crm\PaymentsModule\Models\Gateways\GatewayAbstract;
+use Crm\PaymentsModule\Models\Gateways\ProcessResponse;
 use Crm\WalletPayModule\Model\GooglePayResult;
 use Crm\WalletPayModule\Model\GooglePayWalletInterface;
 use Crm\WalletPayModule\Repositories\WalletPayTokensRepository;

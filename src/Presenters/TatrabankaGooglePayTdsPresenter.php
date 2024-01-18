@@ -3,7 +3,7 @@
 namespace Crm\WalletPayModule\Presenters;
 
 use Crm\ApplicationModule\Presenters\FrontendPresenter;
-use Crm\PaymentsModule\Repository\PaymentsRepository;
+use Crm\PaymentsModule\Repositories\PaymentsRepository;
 use Nette\Application\LinkGenerator;
 
 class TatrabankaGooglePayTdsPresenter extends FrontendPresenter
