@@ -2,8 +2,8 @@
 
 namespace Crm\WalletPayModule\Model;
 
-use Crm\ApplicationModule\Config\ApplicationConfig;
-use Crm\ApplicationModule\Request;
+use Crm\ApplicationModule\Models\Config\ApplicationConfig;
+use Crm\ApplicationModule\Models\Request;
 use Crm\PaymentsModule\Models\Wallet\CardPayDirectService;
 use Crm\PaymentsModule\Models\Wallet\TransactionPayload;
 use Crm\PaymentsModule\Models\Wallet\WrongTransactionPayloadData;

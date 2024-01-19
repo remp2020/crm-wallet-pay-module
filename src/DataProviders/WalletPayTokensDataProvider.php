@@ -2,7 +2,7 @@
 
 namespace Crm\WalletPayModule\DataProviders;
 
-use Crm\ApplicationModule\DataProvider\DataProviderException;
+use Crm\ApplicationModule\Models\DataProvider\DataProviderException;
 use Crm\SalesFunnelModule\DataProviders\SalesFunnelPaymentFormDataProviderInterface;
 use Crm\WalletPayModule\Gateways\ApplePayWallet;
 use Crm\WalletPayModule\Gateways\GooglePayWallet;
