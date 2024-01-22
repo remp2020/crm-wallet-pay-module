@@ -1,6 +1,6 @@
 <?php
 
-namespace Crm\WalletPayModule\Model;
+namespace Crm\WalletPayModule\Models;
 
 class GooglePayResult
 {

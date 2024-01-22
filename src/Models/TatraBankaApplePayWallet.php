@@ -1,6 +1,6 @@
 <?php
 
-namespace Crm\WalletPayModule\Model;
+namespace Crm\WalletPayModule\Models;
 
 use Crm\ApplicationModule\Models\Config\ApplicationConfig;
 use Crm\ApplicationModule\Models\Request;
@@ -11,51 +11,38 @@ use Crm\PaymentsModule\Repositories\PaymentMetaRepository;
 use Crm\PaymentsModule\Repositories\PaymentsRepository;
 use Money\Currencies\ISOCurrencies;
 use Money\Currency;
-use Nette\Application\LinkGenerator;
 use Nette\Application\UI\InvalidLinkException;
 use Nette\Database\Table\ActiveRow;
 use Tracy\Debugger;
 use Tracy\ILogger;
 
-class TatraBankaGooglePayWallet implements GooglePayWalletInterface
+class TatraBankaApplePayWallet implements ApplePayWalletInterface
 {
     private ApplicationConfig $applicationConfig;
-    private LinkGenerator $linkGenerator;
-    private PaymentMetaRepository $paymentMetaRepository;
-    private CardPayDirectService $cardPayDirectService;
+
     private PaymentsRepository $paymentsRepository;
+
+    private PaymentMetaRepository $paymentMetaRepository;
+
+    private CardPayDirectService $cardPayDirectService;
 
     public function __construct(
         ApplicationConfig $applicationConfig,
-        LinkGenerator $linkGenerator,
+        PaymentsRepository $paymentsRepository,
         PaymentMetaRepository $paymentMetaRepository,
-        CardPayDirectService $cardPayDirectService,
-        PaymentsRepository $paymentsRepository
+        CardPayDirectService $cardPayDirectService
     ) {
         $this->applicationConfig = $applicationConfig;
-        $this->linkGenerator = $linkGenerator;
+        $this->paymentsRepository = $paymentsRepository;
         $this->paymentMetaRepository = $paymentMetaRepository;
         $this->cardPayDirectService = $cardPayDirectService;
-        $this->paymentsRepository = $paymentsRepository;
-    }
-
-    public function checkPayment(ActiveRow $payment): bool
-    {
-        $processingId = $this->paymentMetaRepository->findByPaymentAndKey($payment, Constants::WALLET_PAY_PROCESSING_ID);
-        if (!$processingId) {
-            return false;
-        }
-
-        $mid = $this->applicationConfig->get('cardpay_mid');
-        $result = $this->cardPayDirectService->checkTransaction($processingId->value, $mid);
-        return $result->isSuccess();
     }
 
     /**
      * @throws WrongTransactionPayloadData
      * @throws InvalidLinkException
      */
-    public function process(ActiveRow $payment, string $googlePayToken): GooglePayResult
+    public function process(ActiveRow $payment, string $applePayToken): ApplePayResult
     {
         $currencyCode = (new ISOCurrencies())->numericCodeFor(new Currency($this->applicationConfig->get('currency')));
 
@@ -66,17 +53,16 @@ class TatraBankaGooglePayWallet implements GooglePayWalletInterface
             ->setVariableSymbol($payment->variable_symbol)
             ->setClientIpAddress(Request::getIp())
             ->setClientName($payment->user->email)
-            ->setGooglePayToken($googlePayToken)
-            ->setTdsTermUrl($this->linkGenerator->link('WalletPay:TatrabankaGooglePayTds:redirect', ['vs' => $payment->variable_symbol]));
+            ->setApplePayToken($applePayToken);
 
         $result = $this->cardPayDirectService->postTransaction($payload);
 
         $resultData = $result->resultData();
         if (!$resultData) {
-            Debugger::log("TatraBankaGooglePayWallet - transaction error: " . $result->message(), ILogger::ERROR);
+            Debugger::log("TatraBankaApplePayWallet - transaction error: " . $result->message(), ILogger::ERROR);
             // Update payment status here instead of redirecting to ReturnPresenter (user may want to stay on the sales funnel in case of ERROR)
             $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_FAIL);
-            return new GooglePayResult(GooglePayResult::ERROR, ['error' => $result->message()]);
+            return new ApplePayResult(ApplePayResult::ERROR, ['error' => $result->message()]);
         }
 
         $meta = array_filter([
@@ -89,15 +75,11 @@ class TatraBankaGooglePayWallet implements GooglePayWalletInterface
         if (!$result->isSuccess()) {
             // Update payment status here instead of redirecting to ReturnPresenter (user may want to stay on the sales funnel in case of ERROR)
             $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_FAIL);
-            return new GooglePayResult(GooglePayResult::ERROR, $meta);
+            return new ApplePayResult(ApplePayResult::ERROR, $meta);
         }
 
+        // assigning PROCESSING_ID means payment was successful
         $this->paymentMetaRepository->add($payment, Constants::WALLET_PAY_PROCESSING_ID, $result->resultData()->getProcessingId());
-
-        if ($result->resultData()->getTdsRedirectionFormHtml()) {
-            return new GooglePayResult(GooglePayResult::TDS, $meta, $result->resultData()->getTdsRedirectionFormHtml());
-        }
-
-        return new GooglePayResult(GooglePayResult::OK, $meta);
+        return new ApplePayResult(ApplePayResult::OK, $meta);
     }
 }
