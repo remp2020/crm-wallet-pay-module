@@ -4,6 +4,7 @@ namespace Crm\WalletPayModule\Models;
 
 use Crm\ApplicationModule\Models\Config\ApplicationConfig;
 use Crm\ApplicationModule\Models\Request;
+use Crm\PaymentsModule\Models\Payment\PaymentStatusEnum;
 use Crm\PaymentsModule\Models\Wallet\CardPayDirectService;
 use Crm\PaymentsModule\Models\Wallet\TransactionPayload;
 use Crm\PaymentsModule\Models\Wallet\WrongTransactionPayloadData;
@@ -75,7 +76,7 @@ class TatraBankaGooglePayWallet implements GooglePayWalletInterface
         if (!$resultData) {
             Debugger::log("TatraBankaGooglePayWallet - transaction error: " . $result->message(), ILogger::ERROR);
             // Update payment status here instead of redirecting to ReturnPresenter (user may want to stay on the sales funnel in case of ERROR)
-            $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_FAIL);
+            $this->paymentsRepository->updateStatus($payment, PaymentStatusEnum::Fail->value);
             return new GooglePayResult(GooglePayResult::ERROR, ['error' => $result->message()]);
         }
 
@@ -88,7 +89,7 @@ class TatraBankaGooglePayWallet implements GooglePayWalletInterface
 
         if (!$result->isSuccess()) {
             // Update payment status here instead of redirecting to ReturnPresenter (user may want to stay on the sales funnel in case of ERROR)
-            $this->paymentsRepository->updateStatus($payment, PaymentsRepository::STATUS_FAIL);
+            $this->paymentsRepository->updateStatus($payment, PaymentStatusEnum::Fail->value);
             return new GooglePayResult(GooglePayResult::ERROR, $meta);
         }
 
