@@ -31,7 +31,7 @@ class GooglePayWallet extends GatewayAbstract
         Response $httpResponse,
         Translator $translator,
         GooglePayWalletInterface $googlePayWallet,
-        WalletPayTokensRepository $walletPayTokensRepository
+        WalletPayTokensRepository $walletPayTokensRepository,
     ) {
         parent::__construct($linkGenerator, $applicationConfig, $httpResponse, $translator);
         $this->googlePayWallet = $googlePayWallet;

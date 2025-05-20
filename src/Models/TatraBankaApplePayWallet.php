@@ -31,7 +31,7 @@ class TatraBankaApplePayWallet implements ApplePayWalletInterface
         ApplicationConfig $applicationConfig,
         PaymentsRepository $paymentsRepository,
         PaymentMetaRepository $paymentMetaRepository,
-        CardPayDirectService $cardPayDirectService
+        CardPayDirectService $cardPayDirectService,
     ) {
         $this->applicationConfig = $applicationConfig;
         $this->paymentsRepository = $paymentsRepository;

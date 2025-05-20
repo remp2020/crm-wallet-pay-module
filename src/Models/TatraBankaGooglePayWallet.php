@@ -31,7 +31,7 @@ class TatraBankaGooglePayWallet implements GooglePayWalletInterface
         LinkGenerator $linkGenerator,
         PaymentMetaRepository $paymentMetaRepository,
         CardPayDirectService $cardPayDirectService,
-        PaymentsRepository $paymentsRepository
+        PaymentsRepository $paymentsRepository,
     ) {
         $this->applicationConfig = $applicationConfig;
         $this->linkGenerator = $linkGenerator;

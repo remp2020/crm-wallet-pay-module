@@ -15,7 +15,7 @@ class WalletPayTokensRepository extends Repository
             'payment_id' => $payment->id,
             'type' => $type,
             'value' => $value,
-            'created_at' => new \DateTime()
+            'created_at' => new \DateTime(),
         ]);
     }
 

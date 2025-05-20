@@ -34,7 +34,7 @@ class ApplePayWallet extends GatewayAbstract
         Translator $translator,
         ApplePayWalletInterface $applePayWallet,
         WalletPayTokensRepository $walletPayTokensRepository,
-        PaymentMetaRepository $paymentMetaRepository
+        PaymentMetaRepository $paymentMetaRepository,
     ) {
         parent::__construct($linkGenerator, $applicationConfig, $httpResponse, $translator);
         $this->applePayWallet = $applePayWallet;
@@ -59,7 +59,7 @@ class ApplePayWallet extends GatewayAbstract
             throw new CannotProcessPayment("ApplePayWallet - payment was not successful");
         }
         $responseData = [
-            'redirect_url' => $this->generateReturnUrl($this->payment, ['VS' => $this->payment->variable_symbol])
+            'redirect_url' => $this->generateReturnUrl($this->payment, ['VS' => $this->payment->variable_symbol]),
         ];
 
         return new ProcessResponse('apple_pay', $responseData);

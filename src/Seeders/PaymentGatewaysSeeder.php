@@ -22,7 +22,7 @@ class PaymentGatewaysSeeder implements ISeeder
                 'ApplePay Wallet',
                 'applepay_wallet',
                 600,
-                true
+                true,
             );
             $output->writeln('  <comment>* payment type <info>applepay_wallet</info> created</comment>');
         } else {
@@ -34,7 +34,7 @@ class PaymentGatewaysSeeder implements ISeeder
                 'GooglePay Wallet',
                 'googlepay_wallet',
                 700,
-                true
+                true,
             );
             $output->writeln('  <comment>* payment type <info>googlepay_wallet</info> created</comment>');
         } else {

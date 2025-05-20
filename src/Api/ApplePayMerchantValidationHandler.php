@@ -36,7 +36,7 @@ class ApplePayMerchantValidationHandler extends ApiHandler
 
     public function __construct(
         ApplicationConfig $applicationConfig,
-        Request $request
+        Request $request,
     ) {
         parent::__construct();
         $this->applicationConfig = $applicationConfig;

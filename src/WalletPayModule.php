@@ -35,8 +35,8 @@ class WalletPayModule extends CrmModule
             new ApiRoute(
                 new ApiIdentifier('1', 'apple-pay', 'merchant-validation'),
                 ApplePayMerchantValidationHandler::class,
-                NoAuthorization::class
-            )
+                NoAuthorization::class,
+            ),
         );
     }
 
@@ -44,7 +44,7 @@ class WalletPayModule extends CrmModule
     {
         $dataProviderManager->registerDataProvider(
             'salesfunnel.dataprovider.payment_form_data',
-            $this->getInstance(WalletPayTokensDataProvider::class)
+            $this->getInstance(WalletPayTokensDataProvider::class),
         );
     }
 }
